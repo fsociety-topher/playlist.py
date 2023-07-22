@@ -1,0 +1,53 @@
+import pandas as pd
+from pytube import Playlist
+from pytube import YouTube
+from openpyxl import load_workbook
+
+def extract_playlist_details(playlist_url):
+    playlist = Playlist(playlist_url)
+    total_videos = len(playlist.video_urls)
+    progress = 0
+
+    details = []
+    for video in playlist.videos:
+        details.append({
+            'Title': video.title,
+            'URL': video.watch_url,
+            'Transcript': video.watch_url.replace("https://youtube.com/watch?v=", "https://youtubetranscript.com/?v="),
+            'ytmp4': video.watch_url.replace("youtube.com/watch?v=", "youtubepp.com/watch?v=")
+            # Add additional details if needed
+        })
+
+        # Update progress
+        progress += 1
+        print(f"Progress: {progress}/{total_videos}")
+
+    return pd.DataFrame(details)
+
+if __name__ == '__main__':
+    playlist_url = input("Enter the YouTube playlist URL: ")
+
+    df = extract_playlist_details(playlist_url)
+    df.to_excel('playlist.xlsx', index=False)
+
+    # Open the Excel file using openpyxl
+    workbook = load_workbook('playlist.xlsx')
+    worksheet = workbook.active
+
+    # Autofit columns
+    for column in worksheet.columns:
+        max_length = 0
+        column = [cell for cell in column]
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2) * 1.2
+        worksheet.column_dimensions[column[0].column_letter].width = adjusted_width
+
+    workbook.save('playlist.xlsx')
+    workbook.close()
+
+    print("Playlist details exported to playlist.xlsx")
